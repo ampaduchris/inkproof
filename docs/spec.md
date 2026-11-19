@@ -378,7 +378,7 @@ Field notes. `removed` is empty in audit mode. `findings` holds survivors in app
 
 ## 10. Fixtures
 
-All values planted in fixtures are canaries: synthetic, unique per fixture, and valid for the pattern they exercise. Email canaries use reserved example domains. Bank account canaries use published example numbers (the table of lengths and the examples come from session 1.4, N3). Tax and insurance numbers are taken only from values that their issuers publish as examples, listed in `docs/REASONING_AUDIT.md` RA-3:
+All values planted in fixtures are canaries: synthetic, unique per fixture, and valid for the pattern they exercise. Email canaries use reserved example domains. Bank account canaries use the examples that the registry publishes (release 103): `DE89370400440532013000` and `GB29NWBK60161331926819` for the `iban` tests (RA-4). Tax and insurance numbers are taken only from values that their issuers publish as examples, listed in `docs/REASONING_AUDIT.md` RA-3:
 
 - `de-tax-id`: the five published numbers of section 5.4 that start with a non-zero digit, plus the published test number starting with 0 as a negative case.
 - `uk-ni`: `AA123456A`, `AB123456D` and `AA111111A` (HMRC Developer Hub sandbox examples); `QQ123456A` (the HMRC manual's own example, which has an excluded prefix) as a negative case.
@@ -570,7 +570,7 @@ Not checked: a form object reused on several pages; forms with a transformation 
 | --- | --- | --- |
 | N1 | The National Insurance prefix rules in REQ-024 were from memory. | Settled 19 Nov 2026. The HMRC National Insurance manual (NIM39110) states the same letter and prefix rules and suffix A to D. RA-1. |
 | N2 | The tax number digit-frequency rule (REQ-023) was from memory. | Settled 19 Nov 2026, with a correction: the issuer also bars three equal digits at consecutive positions. Filter stays off in 1.0. RA-2. |
-| N3 | The IBAN country length table is not drafted here. | Open, with an interim cross-check (RA-4): two open-source tables derived from the registry agree on 89 countries, with Germany and the United Kingdom at 22. The registry itself has not been read and its current release is not known. The table is taken from the registry file and its release recorded before the `iban` pattern is built (session 1.4). |
+| N3 | The IBAN country length table is not drafted here. | Settled 19 Nov 2026 from the registry itself, release 103 (Sep 2026): 89 countries in `src/inkproof/data/iban_lengths.json`, with the release, source and file hash recorded. RA-4. Session 1.4 loads it. |
 | N4 | No synthetic tax or insurance number can be guaranteed unissued. | Settled as far as it can be. Fixture values are issuer-published examples (section 10, RA-3). Not proved unissued. |
 | N5 | Behaviour of the engines on a nested form object, a tagged file and layer names (X05, X07, X08) was not probed. | Settled 19 Nov 2026 for the cases probed (section 12.3). The name-tree form of destinations and the other cases listed there remain for the fixture session. |
 | N6 | `pdftotext` was not available locally, so the third cross-check in REQ-030 was untested. | Closed. `pdftotext` is replaced by pypdf (section 12.2). |
