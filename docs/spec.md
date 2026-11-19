@@ -428,6 +428,43 @@ Each holds one value per pattern and two terms, at known counts.
 
 This is 24 fixtures, not the 15 that session 1.1 lists (DEV-004).
 
+### 10.4 Fixture to requirement map
+
+Derived on 19 Nov 2026 from the requirement and proof columns of this file. Every one of the 24 fixtures serves at least one requirement. Session 1.3 keeps this table current and checks it against the spec.
+
+| Fixture | Requirements that use it |
+| --- | --- |
+| R1 | REQ-001, REQ-014, REQ-030, REQ-039, REQ-060 |
+| R2 | REQ-030 |
+| R3 | REQ-030 |
+| R4 | REQ-030 |
+| R5 | REQ-015, REQ-030, REQ-031 |
+| A01 | REQ-002, REQ-032, REQ-057, REQ-065 |
+| A02 | REQ-066 |
+| A03 | REQ-032, REQ-067 |
+| A04 | REQ-068 |
+| A05 | REQ-032, REQ-069 |
+| A06 | REQ-032, REQ-069 |
+| A07 | REQ-039, REQ-060, REQ-061 |
+| A08 | REQ-034, REQ-071 |
+| A09 | REQ-032, REQ-070 |
+| A10 | REQ-034, REQ-035, REQ-036, REQ-037, REQ-072 |
+| C01 | REQ-057, REQ-058 |
+| X01 | REQ-013, REQ-015 |
+| X02 | REQ-048 |
+| X03 | REQ-088 |
+| X04 | REQ-088 |
+| X05 | REQ-032 |
+| X06 | REQ-074 |
+| X07 | REQ-038 |
+| X08 | REQ-050 |
+
+### 10.5 Construction notes from the probe (section 12.3)
+
+- X05: the page content calls form `Fm1`, which calls form `Fm2`, which shows the text with a base-14 font. Two levels, no reuse.
+- X07: a structure tree root in the catalog with one `Figure` element carrying `/Alt` and `/ActualText`, and `/MarkInfo << /Marked true >>`.
+- X08: use the name-tree form (`/Names` with `/Dests`) as well as the `/Dests` dictionary the probe used; a page label with a `/P` prefix; an optional content group with a `/Name`. Match page labels on the prefix: pypdf returns prefix plus number, PyMuPDF returns them apart.
+
 ## 11. Traceability
 
 ### 11.1 Scope bullets in BUILD.md
@@ -513,13 +550,27 @@ The owner decided on 15 Nov 2026 to use pypdf in place of the `pdftotext` system
 
 Not checked with pypdf: subset fonts and private encodings, rotated and multi-column reading order, annotations, form fields, nested form objects, tagged files, speed on a 100-page file. A failure found when the fixtures exist becomes a deviation or a spec change.
 
-### 12.3 NOT VERIFIED and settled points
+### 12.3 Nested forms, tagged files and layer names (N5), measured on 19 Nov 2026
+
+Probe: `docs/probes/n5_probe.py`. Versions: PyMuPDF 2.1 on MuPDF 1.28.6, pdfminer.six 20260107, pypdf 7.1.1, Python 3.11.15. Synthetic one-page files.
+
+| # | Observation | Consequence |
+| --- | --- | --- |
+| E13 | Text in a form object nested two levels deep is returned by PyMuPDF (text, trace and search), pdfminer.six and pypdf. Locating it from the text trace, redacting that box and saving in full with garbage collection left no trace of it in any decoded stream. | REQ-032 holds for nested forms (fixture X05). |
+| E14 | Alternative text and actual text in a structure tree are returned by no engine. They are in the raw bytes. The tree is reachable from the catalog through PyMuPDF and through pypdf. Removing the catalog entries and saving in full with garbage collection left neither string in the bytes. | REQ-038 works by dropping the tree. V3 must enumerate the tree and V4 finds the literal string (fixture X07). |
+| E15 | A named destination name, a page label prefix and a layer name are returned by no engine's text. PyMuPDF (`resolve_names`, `get_page_labels`, `get_ocgs`) and pypdf (`named_destinations`, `page_labels`, `/OCProperties`) both enumerate them. A full save with garbage collection keeps all three, so apply does not remove them. | V3 can enumerate S5 and S10 through either library. REQ-050 stands: these surfaces are verify-only (fixture X08). |
+
+No spec change followed from the probe.
+
+Not checked: a form object reused on several pages; forms with a transformation matrix or clipping; destinations in the `/Names` name tree (the probe used the `/Dests` dictionary); structure trees with many elements; files whose objects sit in object streams. The fixture session checks the name-tree form and reports any failure as a deviation or a spec change.
+
+### 12.4 NOT VERIFIED and settled points
 
 | # | Point | Status |
 | --- | --- | --- |
 | N1 | The National Insurance prefix rules in REQ-024 were from memory. | Settled 19 Nov 2026. The HMRC National Insurance manual (NIM39110) states the same letter and prefix rules and suffix A to D. RA-1. |
 | N2 | The tax number digit-frequency rule (REQ-023) was from memory. | Settled 19 Nov 2026, with a correction: the issuer also bars three equal digits at consecutive positions. Filter stays off in 1.0. RA-2. |
-| N3 | The IBAN country length table is not drafted here. | Open. Taken from the registry and its release recorded in the session that implements the `iban` pattern (1.4; the 1.3 session text lists no such step). |
+| N3 | The IBAN country length table is not drafted here. | Open, with an interim cross-check (RA-4): two open-source tables derived from the registry agree on 89 countries, with Germany and the United Kingdom at 22. The registry itself has not been read and its current release is not known. The table is taken from the registry file and its release recorded before the `iban` pattern is built (session 1.4). |
 | N4 | No synthetic tax or insurance number can be guaranteed unissued. | Settled as far as it can be. Fixture values are issuer-published examples (section 10, RA-3). Not proved unissued. |
-| N5 | Behaviour of the engines on a nested form object, a tagged file and layer names (X05, X07, X08) was not probed. | Open. The fixture session probes it; a failure becomes a deviation or a spec change. |
+| N5 | Behaviour of the engines on a nested form object, a tagged file and layer names (X05, X07, X08) was not probed. | Settled 19 Nov 2026 for the cases probed (section 12.3). The name-tree form of destinations and the other cases listed there remain for the fixture session. |
 | N6 | `pdftotext` was not available locally, so the third cross-check in REQ-030 was untested. | Closed. `pdftotext` is replaced by pypdf (section 12.2). |
