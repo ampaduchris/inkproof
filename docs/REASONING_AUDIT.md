@@ -31,3 +31,13 @@ Values are taken only from examples that their issuers publish.
 
 - Not proved: that any positive value above has never been issued to a person. Published examples make it unlikely, not impossible. Fixtures contain no other identifier-shaped numbers.
 - IBAN (International Bank Account Number) canaries and the length table are not covered here (N3, session 1.4).
+
+## RA-4 IBAN country lengths, interim cross-check (spec REQ-020, REQ-021, N3 still open)
+
+- Claim: the total length of an IBAN is fixed per country by the registry kept by SWIFT as Registration Authority for ISO 13616. Germany and the United Kingdom are 22.
+- Source not yet read: the registry file itself (https://www.swift.com/resource/iban-registry-pdf). A command-line request was refused with HTTP 403 on 19 Nov 2026 and the file is a PDF, so it needs a download that the owner has to approve or supply.
+- Interim cross-check, run on 19 Nov 2026 with Python 3.11: python-stdnum 2.2 (its data file says it was generated from registry release 101) and schwifty 2026.11.3 (its generated data file says it derives from the SWIFT specification). Total length computed from each country's structure string in the first; the stored length in the second.
+- Result: 89 countries in the first; 105 in the second. All 89 common countries have the same length, no differences. The extra 16 in the second (AX, BL, GF, GG, GP, IM, JE, MF, MQ, NC, PF, PM, RE, TF, WF, YT) look like territories of other countries; that was not checked against the registry. Germany 22 and United Kingdom 22 in both.
+- What this shows: the two transcriptions of the registry agree with each other. It does not show that either is current. Registry releases add countries; a country added after release 101 would be missing from the first, and the second may be missing it too.
+- Consequence for the tool: a missing country means an IBAN from that country is not matched, which is a missed redaction. The table is not built from these two sources. It is built from the registry file, with its release recorded (REQ-021).
+- Not checked: the registry; the current release number; any country added after release 101.
