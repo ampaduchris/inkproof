@@ -29,6 +29,7 @@ dev = [
     "hypothesis>=6",
     "mutmut>=3",
     "reportlab>=4",
+    "pypdf>=7.1.1",
 ]
 
 [tool.pytest.ini_options]
