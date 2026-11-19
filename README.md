@@ -14,7 +14,16 @@ Added when the commands exist (session 1.x).
 
 ## Limits
 
-Optical character recognition (OCR) of scanned images is out of scope. The full table of limits arrives with the spec in session 1.2.
+What inkproof does not claim. The same table is in `docs/spec.md` section 1.2. Where this README states the claim it says "text layer"; it never says "the document is clean".
+
+| Limit | Meaning |
+| --- | --- |
+| LIM-1 Images | Text that exists only as pixels is not examined. There is no optical character recognition (OCR). |
+| LIM-2 Accents | `Müller` does not match `Muller` or `Mueller`. List each spelling. |
+| LIM-3 Page breaks | A match split across two pages is not found. |
+| LIM-4 Reading order | Matching follows the order in which each engine returns text. Text that an engine returns in scattered order (some multi-column or rotated layouts) can be missed by that engine. |
+| LIM-5 Meaning | The tool finds strings. It does not know that "the claimant" refers to a named person. |
+| LIM-6 Custom font encodings in the raw scan | The raw scan decodes strings with standard encodings only. Text in fonts with private encodings is covered by the two extraction checks, not by the raw scan. |
 
 ## Licence
 
