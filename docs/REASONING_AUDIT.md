@@ -32,12 +32,16 @@ Values are taken only from examples that their issuers publish.
 - Not proved: that any positive value above has never been issued to a person. Published examples make it unlikely, not impossible. Fixtures contain no other identifier-shaped numbers.
 - IBAN (International Bank Account Number) canaries and the length table are not covered here (N3, session 1.4).
 
-## RA-4 IBAN country lengths, interim cross-check (spec REQ-020, REQ-021, N3 still open)
+## RA-4 IBAN country lengths (spec REQ-020, REQ-021, settles N3)
 
 - Claim: the total length of an IBAN is fixed per country by the registry kept by SWIFT as Registration Authority for ISO 13616. Germany and the United Kingdom are 22.
-- Source not yet read: the registry file itself (https://www.swift.com/resource/iban-registry-pdf). A command-line request was refused with HTTP 403 on 19 Nov 2026 and the file is a PDF, so it needs a download that the owner has to approve or supply.
-- Interim cross-check, run on 19 Nov 2026 with Python 3.11: python-stdnum 2.2 (its data file says it was generated from registry release 101) and schwifty 2026.11.3 (its generated data file says it derives from the SWIFT specification). Total length computed from each country's structure string in the first; the stored length in the second.
-- Result: 89 countries in the first; 105 in the second. All 89 common countries have the same length, no differences. The extra 16 in the second (AX, BL, GF, GG, GP, IM, JE, MF, MQ, NC, PF, PM, RE, TF, WF, YT) look like territories of other countries; that was not checked against the registry. Germany 22 and United Kingdom 22 in both.
-- What this shows: the two transcriptions of the registry agree with each other. It does not show that either is current. Registry releases add countries; a country added after release 101 would be missing from the first, and the second may be missing it too.
-- Consequence for the tool: a missing country means an IBAN from that country is not matched, which is a missed redaction. The table is not built from these two sources. It is built from the registry file, with its release recorded (REQ-021).
-- Not checked: the registry; the current release number; any country added after release 101.
+- Source: the IBAN Registry, Release 103, Sep 2026, a 97-page PDF from https://www.swift.com/resource/iban-registry-pdf, saved by the owner as `iban-registry_4.pdf` (SHA-256 `4f352af630187cf9253619d8a46d37edc0e6cecddecfe5dcaa69ac52035f958a`) and supplied on 19 Nov 2026. Text extracted with pypdf 7.1.1. The file is kept in the owner's private folder and is not in this repository. The registry may be newer than release 103 by the time anyone reads this; the data file records the release it was taken from.
+- Method: each of the 89 country records gives an "IBAN structure" and an "IBAN length". Both were read for every record.
+- Checks run on 19 Nov 2026:
+  - For all 89 records the length implied by the structure string equals the stated length.
+  - Each record's published example has the stated length and passes the modulo 97 check of REQ-020 (89 of 89).
+  - Germany 22 and United Kingdom 22.
+  - The lengths agree with two open-source tables for all 89 countries (python-stdnum 2.2, generated from release 101; schwifty 2026.11.3). The same 89 country codes appear in release 103 and in release 101, so no country was added between them. The extra 16 codes in schwifty (AX, BL, GF, GG, GP, IM, JE, MF, MQ, NC, PF, PM, RE, TF, WF, YT) are not registry country records and are not in the table.
+- Published examples used as canaries: `DE89370400440532013000` and `GB29NWBK60161331926819`.
+- Result: `src/inkproof/data/iban_lengths.json` holds the 89 lengths with the release, source, retrieval date and file hash.
+- Not checked: whether a release later than 103 exists; the registry's effective dates for each country; the registry's "IBAN usage" notes, such as countries that restrict use.
