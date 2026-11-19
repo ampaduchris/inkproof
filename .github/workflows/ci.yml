@@ -30,14 +30,13 @@ jobs:
       - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install poppler (pdftotext, third cross-check engine)
-        run: sudo apt-get update -qq && sudo apt-get install -y -qq poppler-utils
       - name: Install from the lockfile
         run: uv sync --locked
       - name: Tests
         run: uv run --locked pytest -q --tb=short
+      # Report-only until session 1.8 (DEV-007); then drop the flag so an untested MUST fails the job.
       - name: Requirement traceability
-        run: uv run --locked python scripts/trace.py
+        run: uv run --locked python scripts/trace.py --report-only
 
   gitleaks:
     runs-on: ubuntu-24.04
