@@ -142,7 +142,8 @@ def test_embedded_files_and_actions_stripped(tmp_path):
     assert out.embfile_count() == 0
     assert out.xref_get_key(out.pdf_catalog(), "OpenAction")[0] == "null"
     assert out.xref_get_key(out.pdf_catalog(), "AA")[0] == "null"
-    assert "/JavaScript" not in check_text(r.out.read_bytes(), "raw")
+    raw = check_text(r.out.read_bytes(), "raw")
+    assert "app.alert" not in raw and "this.print" not in raw and "/JS" not in raw   # no script source is left
     assert r.report["actions"]["embedded_files_removed"] == 1
     assert r.report["actions"]["actions_removed"] == 3                     # OpenAction, page action, script name tree
 

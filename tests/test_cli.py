@@ -94,7 +94,7 @@ def test_cli_version_and_help():
         assert opt in text, opt
     for code, word in enumerate(["clean", "leaks", "usage", "document", "internal"]):
         assert re.search(rf"\b{code}\s+{word}", text), (code, word)
-    names = {o for p in typer.main.get_command(app).commands["apply"].params for o in p.opts}
+    names = {o for p in typer.main.get_command(app).commands["apply"].params for o in p.opts if o.startswith("-")}
     assert OPTIONS | {"-o"} >= names
 
 
@@ -168,7 +168,7 @@ def test_atomic_write(tmp_path, monkeypatch):
     (tmp_path / "bad").mkdir()
     r = apply(tmp_path / "bad", "R1", terms=[R1_TERM])
     assert r.exit_code == 4 and not r.out.exists()
-    assert sorted(p.name for p in (tmp_path / "bad").iterdir() if p.name not in ("terms.txt", "in.pdf")) == []
+    assert sorted(p.name for p in (tmp_path / "bad").iterdir() if p.name not in ("terms.txt", "in.pdf", "out.pdf.report.json")) == []
 
 
 @pytest.mark.req("REQ-088")

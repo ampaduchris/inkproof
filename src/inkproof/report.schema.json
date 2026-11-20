@@ -1,0 +1,360 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "inkproof report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "tool",
+    "mode",
+    "input",
+    "output",
+    "request",
+    "removed",
+    "actions",
+    "findings",
+    "checks",
+    "limits",
+    "result",
+    "exit_code"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "inkproof"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "mode": {
+      "enum": [
+        "apply",
+        "audit"
+      ]
+    },
+    "input": {
+      "$ref": "#/$defs/file"
+    },
+    "output": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/file"
+        }
+      ]
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "terms_count",
+        "patterns",
+        "options"
+      ],
+      "properties": {
+        "terms_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "patterns": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "iban",
+              "de-tax-id",
+              "uk-ni",
+              "email"
+            ]
+          },
+          "uniqueItems": true
+        },
+        "options": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "substring",
+              "allow-short-terms",
+              "no-mark",
+              "force"
+            ]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "removed": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/match"
+      }
+    },
+    "actions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "annotations_removed",
+        "form_fields_removed",
+        "metadata_removed",
+        "embedded_files_removed",
+        "actions_removed",
+        "outline_titles_redacted",
+        "structure_tree_removed"
+      ],
+      "properties": {
+        "annotations_removed": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "form_fields_removed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "metadata_removed": {
+          "type": "boolean"
+        },
+        "embedded_files_removed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "actions_removed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outline_titles_redacted": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "structure_tree_removed": {
+          "type": "boolean"
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/match"
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "engine",
+          "engine_version",
+          "result"
+        ],
+        "properties": {
+          "id": {
+            "enum": [
+              "V1",
+              "V2",
+              "V3",
+              "V4",
+              "V5"
+            ]
+          },
+          "engine": {
+            "type": "string"
+          },
+          "engine_version": {
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "pass",
+              "fail",
+              "not-run"
+            ]
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pages_with_images",
+        "image_only_pages",
+        "notes"
+      ],
+      "properties": {
+        "pages_with_images": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "image_only_pages": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "LIM-1",
+              "LIM-2",
+              "LIM-3",
+              "LIM-4",
+              "LIM-5",
+              "LIM-6"
+            ]
+          }
+        }
+      }
+    },
+    "result": {
+      "enum": [
+        "clean",
+        "leaks-found",
+        "error"
+      ]
+    },
+    "exit_code": {
+      "enum": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  },
+  "$defs": {
+    "file": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sha256",
+        "pages",
+        "revisions"
+      ],
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "pages": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "revisions": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "surface",
+        "page",
+        "revision",
+        "source",
+        "match_kind",
+        "count"
+      ],
+      "properties": {
+        "surface": {
+          "enum": [
+            "S1",
+            "S2",
+            "S3",
+            "S4",
+            "S5",
+            "S6",
+            "S7",
+            "S9",
+            "S10",
+            "S11"
+          ]
+        },
+        "class": {
+          "enum": [
+            "visible",
+            "covered",
+            "same-colour",
+            "off-page",
+            "invisible",
+            "tiny",
+            "clipped",
+            "hidden-layer",
+            "earlier-revision"
+          ]
+        },
+        "page": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "integer",
+              "minimum": 1
+            }
+          ]
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "id"
+          ],
+          "properties": {
+            "type": {
+              "enum": [
+                "term",
+                "pattern"
+              ]
+            },
+            "id": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            }
+          }
+        },
+        "match_kind": {
+          "enum": [
+            "exact",
+            "loose"
+          ]
+        },
+        "count": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

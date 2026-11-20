@@ -22,7 +22,7 @@ def checks(report):
 
 @pytest.mark.req("REQ-045")
 def test_no_skip_verify_option():
-    opts = {o for p in typer.main.get_command(app).commands["apply"].params for o in p.opts}
+    opts = {o for p in typer.main.get_command(app).commands["apply"].params for o in p.opts if o.startswith("-")}
     assert not [o for o in opts if any(w in o for w in ("skip", "no-verify", "unsafe", "fast", "trust"))]
 
 

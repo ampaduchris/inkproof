@@ -567,6 +567,16 @@ No spec change followed from the probe.
 
 Not checked: a form object reused on several pages; forms with a transformation matrix or clipping; structure trees with many elements; files whose objects sit in object streams. The fixture session checks the name-tree form and reports any failure as a deviation or a spec change.
 
+### 12.3a Measured in session 1.4 (PyMuPDF 2.1 on MuPDF 1.28.6, pdfminer.six 20260107, 20 Nov 2026)
+
+- Page redaction in PyMuPDF with the text-removal option, one rectangle per glyph box and no fill, deleted the glyphs of every canary on A01, A03, A05, A06, A09 and X05 (covered, white, off-page, outside the crop box, invisible, nested form). The text trace and pdfminer.six then returned none of them.
+- The text trace of a page includes the text of annotation appearances. A match inside a free-text annotation is therefore also a page text match. `apply` strips annotations first so that such a match is counted once, as an annotation (spec 6, REQ-034).
+- Two saves of one document differ in the second element of the trailer file identifier. `apply` replaces both elements by a hash of the file, which keeps every offset and makes REQ-041 and REQ-078 hold (a report carries the output hash).
+- Setting a catalog key to null in PyMuPDF leaves the key with the value null. A reader sees an absent key. The scripts, embedded files and metadata themselves are gone from the file (tests `test_embedded_files_and_actions_stripped`, `test_metadata_stripped`).
+- `pdfminer.six` returns the text of a page in its own layout order. V2 is a second reader, not a second remover: removal is driven by the text trace only.
+
+Not checked in session 1.4: the audit mode and its leak classes (session 1.5); rotated pages; fonts without a ToUnicode map; encrypted files that open with an empty password; files whose objects sit in object streams.
+
 ### 12.4 NOT VERIFIED and settled points
 
 | # | Point | Status |

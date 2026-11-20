@@ -1,6 +1,7 @@
 """The JSON report (spec section 8)."""
 
 import json
+from pathlib import Path
 import re
 import unicodedata
 from importlib import resources
@@ -98,3 +99,17 @@ def test_image_limits_reported(tmp_path):
     assert r.report["limits"]["image_only_pages"] == [1]
     assert "LIM-1" in r.report["limits"]["notes"]
     assert re.search(r"text layer only", r.stderr)                           # the one-line summary says so
+
+
+@pytest.mark.req("REQ-079")
+def test_shipped_schema_is_the_schema_of_the_spec():
+    spec = (Path(__file__).parent.parent / "docs" / "spec.md").read_text(encoding="utf-8")
+    block = re.search(r"### 8\.1 Schema\s+```json\n(.*?)\n```", spec, re.S).group(1)
+    shipped = json.loads((resources.files("inkproof") / "report.schema.json").read_text(encoding="utf-8"))
+    assert json.loads(block) == shipped
+
+
+@pytest.mark.req("REQ-041")
+def test_same_input_gives_the_same_output_bytes(tmp_path):
+    runs = [apply(sub(tmp_path, str(i)), "R4", terms=all_terms("R4"), patterns=ALL_PATTERNS) for i in range(2)]
+    assert runs[0].out.read_bytes() == runs[1].out.read_bytes()

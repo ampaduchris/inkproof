@@ -116,7 +116,7 @@ def test_overlapping_matches(tmp_path):
     text = "mail tavhol.r1@example.org now"
     ms = Matcher(terms=parse_terms(b"Tavhol\n"), patterns=["email"]).find(text)
     assert sorted(m.source for m in ms) == [("pattern", "email"), ("term", 1)]
-    assert merge_extents(ms) == [(5, 25)]                                # one removal area
+    assert merge_extents(ms) == [(5, 26)]                                # one removal area
     r = apply(tmp_path, "R1", terms=["Tavhol"], patterns="email", report=True)
     assert r.exit_code == 0
     found = sorted((m["source"]["type"], m["count"]) for m in r.report["removed"])
