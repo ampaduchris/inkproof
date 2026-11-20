@@ -104,3 +104,30 @@ def source_for(fid: str, canary) -> tuple[list[str] | None, str | None]:
 
 def present(data: bytes, canary, engines=None) -> bool:
     return any(contains(check_text(data, e), canary.value) for e in (engines or canary.checks))
+
+
+def audit(tmp: Path, fid: str, *, terms: list[str] | None = None, patterns: str | None = None,
+          extra: list[str] | None = None, data: bytes | None = None, name: str = "in.pdf",
+          report: bool = False, catch: bool = False) -> Run:
+    """Run `inkproof audit` on a fixture. The report is read from --report, or from standard output without it."""
+    from inkproof.cli import app
+    src = tmp / name
+    src.write_bytes(data if data is not None else fixture_bytes(fid))
+    args = ["audit", str(src)]
+    if terms is not None:
+        args += ["--terms", str(write_terms(tmp / "terms.txt", terms))]
+    if patterns:
+        args += ["--patterns", patterns]
+    rep_path = tmp / "report.json"
+    if report:
+        args += ["--report", str(rep_path)]
+    args += extra or []
+    res = runner().invoke(app, args, catch_exceptions=catch)
+    rep = None
+    try:
+        rep = json.loads(rep_path.read_text(encoding="utf-8") if report and rep_path.exists() else res.stdout)
+    except ValueError:
+        pass
+    if rep is not None:
+        validate_report(rep)
+    return Run(res.exit_code, res.stdout, res.stderr, src, rep, rep_path)

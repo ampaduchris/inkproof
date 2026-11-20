@@ -575,7 +575,18 @@ Not checked: a form object reused on several pages; forms with a transformation 
 - Setting a catalog key to null in PyMuPDF leaves the key with the value null. A reader sees an absent key. The scripts, embedded files and metadata themselves are gone from the file (tests `test_embedded_files_and_actions_stripped`, `test_metadata_stripped`).
 - `pdfminer.six` returns the text of a page in its own layout order. V2 is a second reader, not a second remover: removal is driven by the text trace only.
 
-Not checked in session 1.4: the audit mode and its leak classes (session 1.5); rotated pages; fonts without a ToUnicode map; encrypted files that open with an empty password; files whose objects sit in object streams.
+Not checked in session 1.4: the audit mode and its leak classes (done in session 1.5, section 12.3b); rotated pages; fonts without a ToUnicode map; encrypted files that open with an empty password; files whose objects sit in object streams.
+
+### 12.3b Measured in session 1.5 (PyMuPDF 2.1 on MuPDF 1.28.6, pdfminer.six 20260107, 20 Nov 2026)
+
+- The trace of a span gives its render type (0 fill, 3 invisible), colour as red, green and blue, opacity and a drawing sequence number. The sequence number is the position in the page's box log. Drawings carry the same number, so text, filled shapes and images can be put in drawing order. An image appears in the box log as `fill-image` and has no colour. Checked on A01 to A09.
+- Trace coordinates are relative to the crop box. On A06 the page rectangle is the crop box and text left of it has negative x. `page.rect` therefore serves both spec 7.2 cases: the crop box where one is set, otherwise the media box.
+- A pop-up annotation is listed with the annotations of the page and is also reachable from the annotation that opens it. Reading both counts one note twice (DEV-019).
+- A free-text annotation with an appearance stream appears in the page trace. Audit removes annotations from an in-memory copy before it reads page text (DEV-023).
+- Planted failures A01 to A06 and A09 gave the classes the spec names (`covered`, `covered`, `same-colour`, `same-colour`, `off-page`, `off-page`, `invisible`). A match that runs from outside the crop box into it is `visible` (DEV-020). A shape that covers 60% of a match, and a shape drawn at half opacity, leave the match `visible`.
+- Fifteen hand-made breaks of the detectors (thresholds, rule order, drawing order, image covers, earlier revisions, the second engine, exit code, report destination) were each caught by the audit tests.
+
+Not checked in session 1.5: rotated pages; text under a clipping path; a match that spans two spans of different colour; a soft-masked image over text; shapes that are not rectangles (DEV-023); files with objects in object streams; files with more than two revisions; speed on a large file. SHOULD classes `tiny`, `clipped` and `hidden-layer` (REQ-073) are not built.
 
 ### 12.4 NOT VERIFIED and settled points
 

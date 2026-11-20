@@ -1,6 +1,6 @@
 """Output hygiene, error masking, temporary files and network (spec 9.1, REQ-080 to REQ-083).
 
-The audit case of REQ-080 arrives with audit mode in session 1.5.
+The audit case of REQ-080 is `test_no_value_in_any_output_audit` in `test_audit.py` (session 1.5).
 """
 
 import os
