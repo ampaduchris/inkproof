@@ -208,9 +208,9 @@ def a05() -> Fixture:
 
 def a06() -> Fixture:
     t, e = hidden("A06")
-    ops = T(150, 650, VIS) + T(20, 400, f"Held {t}") + T(20, 386, f"Held {e}")
+    ops = T(320, 650, VIS) + T(20, 400, f"Held {t}") + T(20, 386, f"Held {e}")
     d = Doc()
-    d.page(ops, extra="/CropBox [100 100 500 700]")
+    d.page(ops, extra="/CropBox [300 100 500 700]")
     return Fixture("A06", {"A06.pdf": d.finish()}, hid_canaries(t, e))
 
 

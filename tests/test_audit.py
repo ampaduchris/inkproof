@@ -266,9 +266,29 @@ def test_class_visible_and_order(tmp_path):
 
 @pytest.mark.req("REQ-065")
 def test_partial_cover_is_not_covered(tmp_path):
+    """A shape over the first 60% of a match leaves it readable: `visible`. Over all of it: `covered`."""
+    def klass(width: int) -> set:
+        d = Doc()
+        d.page(T(72, 700, VIS) + T(72, 600, "Held Zelvorkel") + f"0 g 66 590 {width} 30 re f\n")
+        r = audit(sub(tmp_path, f"w{width}"), "part", terms=["Zelvorkel"], data=d.finish())
+        return {f["class"] for f in r.report["findings"]}
+    assert klass(58) == {"visible"} and klass(120) == {"covered"}
+
+
+@pytest.mark.req("REQ-069")
+def test_match_partly_on_the_page_is_not_off_page(tmp_path):
     d = Doc()
-    d.page(T(72, 700, VIS) + T(72, 600, "Held Zelvorkel") + "0 g 72 590 20 30 re f\n")    # covers the first words only
-    r = audit(tmp_path, "part", terms=["Zelvorkel"], data=d.finish())
+    d.page(T(72, 700, VIS) + T(-30, 600, "Zelvorkel"))                   # starts outside the page, ends inside it
+    r = audit(tmp_path, "edge", terms=["Zelvorkel"], data=d.finish())
+    assert {f["class"] for f in r.report["findings"]} == {"visible"}
+
+
+@pytest.mark.req("REQ-065")
+def test_transparent_shape_does_not_cover(tmp_path):
+    d = Doc()
+    d.page(T(72, 700, VIS) + T(72, 600, "Held Zelvorkel") + "/G1 gs 0 g 66 590 300 30 re f\n",
+           resources="/ExtGState << /G1 << /ca 0.5 >> >>")
+    r = audit(tmp_path, "alpha", terms=["Zelvorkel"], data=d.finish())
     assert {f["class"] for f in r.report["findings"]} == {"visible"}
 
 
@@ -299,7 +319,7 @@ def test_non_page_surface_leaks(tmp_path):
         by_surface.setdefault(f["surface"], set()).add(f["source"]["id"])
     got = {s: len(ids) for s, ids in by_surface.items()}
     assert got == {"S4": 2, "S5": 1, "S3": 1, "S6": 1}                  # information dictionary and XMP, outline, field, file
-    assert all(f["page"] is None for f in r.report["findings"])
+    assert {f["surface"]: f["page"] for f in r.report["findings"]} == {"S4": None, "S5": None, "S3": 1, "S6": None}
 
 
 @pytest.mark.req("REQ-074")
@@ -468,3 +488,18 @@ def test_audit_unreadable_documents(tmp_path):
     for i, (fid, name) in enumerate((("X03", "X03.pdf"), ("X04", "X04-truncated.pdf"), ("X04", "X04-not-a-pdf.bin"))):
         r = audit(sub(tmp_path, str(i)), fid, terms=["Tavnorzel"], data=FIXTURES[fid].files[name])
         assert r.exit_code == 3, name
+
+
+@pytest.mark.req("REQ-056")
+def test_audit_each_engine_catches_alone(tmp_path, monkeypatch):
+    """Page text is read by two engines. Each, with the other returning nothing, still finds the planted leak."""
+    import inkproof.audit as au
+    t = term_values("A01")[0]
+    monkeypatch.setattr(au, "v2_text", lambda data: [])
+    a = audit(sub(tmp_path, "a"), "A01", terms=[t])
+    assert a.exit_code == 1 and {f["class"] for f in a.report["findings"]} == {"covered"}
+    monkeypatch.undo()
+    real = au.page_matches
+    monkeypatch.setattr(au, "page_matches", lambda doc, m, rev, classify: [] if classify else real(doc, m, rev, classify))
+    b = audit(sub(tmp_path, "b"), "A01", terms=[t])
+    assert b.exit_code == 1 and [(f["surface"], f.get("class"), f["count"]) for f in b.report["findings"]] == [("S1", None, 1)]

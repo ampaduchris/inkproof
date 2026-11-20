@@ -323,20 +323,25 @@ def masked_traceback(exc: BaseException) -> str:
 # ---------------------------------------------------------------- the procedure
 
 
-def run_apply(req: Request) -> int:
-    """Run apply. Returns the exit code. Raises InputError for exit 2."""
-    unknown = [p for p in req.patterns if p not in NAMES]
+def read_sources(terms_path: Path | None, patterns: list[str], allow_short: bool) -> list:
+    """Check the pattern names and read the terms file. Raises InputError for exit 2. Shared by apply and audit."""
+    unknown = [p for p in patterns if p not in NAMES]
     if unknown:
         raise InputError("unknown pattern: " + ", ".join(unknown) + " (known: " + ", ".join(NAMES) + ")")
-    if req.terms is None and not req.patterns:
+    if terms_path is None and not patterns:
         raise InputError("give at least one of --terms and --patterns")
-    terms = []
-    if req.terms is not None:
-        try:
-            raw = req.terms.read_bytes()
-        except OSError:
-            raise InputError("the terms file cannot be read") from None
-        terms = parse_terms(raw, allow_short=req.allow_short_terms)
+    if terms_path is None:
+        return []
+    try:
+        raw = terms_path.read_bytes()
+    except OSError:
+        raise InputError("the terms file cannot be read") from None
+    return parse_terms(raw, allow_short=allow_short)
+
+
+def run_apply(req: Request) -> int:
+    """Run apply. Returns the exit code. Raises InputError for exit 2."""
+    terms = read_sources(req.terms, req.patterns, req.allow_short_terms)
     if req.input.resolve() == req.output.resolve():
         raise InputError("the output file must differ from the input file")
     if req.output.exists() and not req.force:

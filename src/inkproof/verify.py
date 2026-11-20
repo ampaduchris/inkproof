@@ -49,21 +49,35 @@ def trace_chars(page) -> list[tuple[str, pymupdf.Rect]]:
     return [(chr(c[0]), pymupdf.Rect(c[3])) for span in page.get_texttrace() for c in span["chars"]]
 
 
-def page_text_with_map(page) -> tuple[str, list[int], list[tuple[str, pymupdf.Rect]]]:
+@dataclass(frozen=True)
+class Glyph:
+    ch: str
+    box: pymupdf.Rect
+    kind: int          # text render type of the span: 0 fill, 1 stroke, 3 invisible
+    color: tuple
+    opacity: float
+    seqno: int         # position in the page's drawing order
+
+
+def page_text_with_glyphs(page) -> tuple[str, list[int], list[Glyph]]:
     """The text of one page in content order, with a separator where the layout implies one.
 
-    Returns the text, for each text position the index of the real character (or -1 for a separator),
-    and the real characters with their boxes.
+    Returns the text, for each text position the index of the real glyph (or -1 for a separator),
+    and the real glyphs with their boxes and drawing attributes.
     """
-    chars = []
+    glyphs: list[Glyph] = []
+    sizes: list[float] = []
     for span in page.get_texttrace():
         size = span.get("size") or 10
         for c in span["chars"]:
-            chars.append((chr(c[0]), pymupdf.Rect(c[3]), size))
+            glyphs.append(Glyph(chr(c[0]), pymupdf.Rect(c[3]), span.get("type", 0), tuple(span.get("color") or ()),
+                                span.get("opacity", 1.0), span.get("seqno", 0)))
+            sizes.append(size)
     text: list[str] = []
     index: list[int] = []
     prev = None
-    for i, (ch, box, size) in enumerate(chars):
+    for i, (g, size) in enumerate(zip(glyphs, sizes)):
+        ch, box = g.ch, g.box
         if prev is not None:
             pch, pbox, psize = prev
             sep = ""
@@ -77,7 +91,13 @@ def page_text_with_map(page) -> tuple[str, list[int], list[tuple[str, pymupdf.Re
         text.append(ch)
         index.append(i)
         prev = (ch, box, size)
-    return "".join(text), index, [(c, b) for c, b, _ in chars]
+    return "".join(text), index, glyphs
+
+
+def page_text_with_map(page) -> tuple[str, list[int], list[tuple[str, pymupdf.Rect]]]:
+    """As `page_text_with_glyphs`, with each glyph reduced to its character and box."""
+    text, index, glyphs = page_text_with_glyphs(page)
+    return text, index, [(g.ch, g.box) for g in glyphs]
 
 
 def v1_text(data: bytes) -> list[str]:
@@ -164,15 +184,18 @@ def decode_bytes(b: bytes) -> list[str]:
         out.append(b.decode("utf-16-be", "replace"))
     out.append(b.decode("utf-8", "replace"))
     out.append(b.decode("latin-1"))
-    return out
+    return list(dict.fromkeys(out))
 
 
 def strings_in(chunk: bytes) -> list[str]:
     """Every string object in a chunk of PDF syntax or of a content stream, and every TJ array joined."""
     out: list[str] = []
+    rest = bytearray(chunk)
     for m in _TJ.finditer(chunk):
         joined = b"".join(_element(e) for e in _ELEM.findall(m.group(1)))
         out += decode_bytes(joined)
+        rest[m.start():m.end()] = b" " * (m.end() - m.start())
+    chunk = bytes(rest)
     for m in _LIT.finditer(chunk):
         out += decode_bytes(_unescape(m.group(0)))
     for m in _HEX.finditer(chunk):
@@ -250,13 +273,23 @@ def _action_xrefs_and_dicts(doc) -> list[str]:
     return out
 
 
-def v3_strings(data: bytes) -> list[tuple[str, int | None, str]]:
-    """Surfaces S2 to S7, S9 and S10 as (surface, page, string) triples."""
+def v3_groups(data: bytes) -> list[tuple[str, int | None, list[str]]]:
+    """Surfaces S2 to S7, S9 and S10 as (surface, page, strings) groups. One group is one item: an annotation with
+    its appearance and pop-up, a metadata entry, an outline title, a name, an embedded file, an action, a structure
+    element, a layer."""
     doc = pymupdf.open(stream=data, filetype="pdf")
-    out: list[tuple[str, int | None, str]] = []
+    out: list[tuple[str, int | None, list[str]]] = []
     try:
+        popups = set()      # a pop-up is read with the annotation that opens it, and not again on its own
+        for page in doc:
+            for xref, _, _ in page.annot_xrefs():
+                kind, val = doc.xref_get_key(xref, "Popup")
+                if kind == "xref":
+                    popups.add(int(val.split()[0]))
         for pno, page in enumerate(doc, start=1):
             for xref, _, _ in page.annot_xrefs():
+                if xref in popups:
+                    continue
                 surface = "S3" if _annot_subtype(doc, xref) == "Widget" else "S2"
                 texts = _object_strings(doc, xref)
                 for key in ("AP/N", "Popup", "AA", "A"):
@@ -264,25 +297,46 @@ def v3_strings(data: bytes) -> list[tuple[str, int | None, str]]:
                     if kind == "xref":
                         sub = int(val.split()[0])
                         texts += _object_strings(doc, sub) + _stream_text(doc, sub)
-                out += [(surface, pno, t) for t in texts]
-        out += [("S4", None, str(v)) for v in doc.metadata.values() if v]
-        out += [("S4", None, doc.get_xml_metadata() or "")]
-        out += [("S5", None, t[1]) for t in doc.get_toc()]
+                out.append((surface, pno, texts))
+        out += [("S4", None, [str(v)]) for v in doc.metadata.values() if v]
+        out.append(("S4", None, [doc.get_xml_metadata() or ""]))
+        out += [("S5", None, [t[1]]) for t in doc.get_toc()]
         try:
-            out += [("S5", None, str(k)) for k in doc.resolve_names()]
+            out += [("S5", None, [str(k)]) for k in doc.resolve_names()]
         except Exception:
             pass
-        out += [("S5", None, str(r.get("prefix", ""))) for r in (doc.get_page_labels() or [])]
+        out += [("S5", None, [str(r.get("prefix", ""))]) for r in (doc.get_page_labels() or [])]
         for name in doc.embfile_names():
             info = doc.embfile_info(name)
-            out += [("S6", None, str(v)) for v in info.values() if isinstance(v, str)]
-            out += [("S6", None, name)]
-            for dec in decode_bytes(doc.embfile_get(name)):
-                out.append(("S6", None, dec))
-        out += [("S7", None, t) for t in _action_xrefs_and_dicts(doc)]
-        out += [("S9", None, t) for t in structure_strings(doc)]
+            texts = [str(v) for v in info.values() if isinstance(v, str)] + [name]
+            texts += decode_bytes(doc.embfile_get(name))
+            out.append(("S6", None, texts))
+        out += [("S7", None, [t]) for t in _action_xrefs_and_dicts(doc)]
+        out += [("S9", None, [t]) for t in structure_strings(doc)]
         for ocg in (doc.get_ocgs() or {}).values():
-            out.append(("S10", None, str(ocg.get("name", ""))))
+            out.append(("S10", None, [str(ocg.get("name", ""))]))
+        return out
+    finally:
+        doc.close()
+
+
+def v3_strings(data: bytes) -> list[tuple[str, int | None, str]]:
+    """Surfaces S2 to S7, S9 and S10 as (surface, page, string) triples."""
+    return [(surface, page, t) for surface, page, texts in v3_groups(data) for t in texts]
+
+
+def v4_by_object(data: bytes) -> list[list[str]]:
+    """Surface S11: for every object of the file, every string it holds and its decoded stream."""
+    doc = pymupdf.open(stream=data, filetype="pdf")
+    out: list[list[str]] = []
+    try:
+        for xref in range(1, doc.xref_length()):
+            try:
+                src = doc.xref_object(xref, compressed=False)
+            except Exception:
+                continue
+            out.append(strings_in(src.encode("latin-1", "replace")) + _stream_text(doc, xref))
+        out.append(strings_in(doc.xref_object(-1).encode("latin-1", "replace")))
         return out
     finally:
         doc.close()
@@ -290,20 +344,7 @@ def v3_strings(data: bytes) -> list[tuple[str, int | None, str]]:
 
 def v4_strings(data: bytes) -> list[str]:
     """Surface S11: every string object and every decoded stream of the whole file."""
-    doc = pymupdf.open(stream=data, filetype="pdf")
-    out: list[str] = []
-    try:
-        for xref in range(1, doc.xref_length()):
-            try:
-                src = doc.xref_object(xref, compressed=False)
-            except Exception:
-                continue
-            out += strings_in(src.encode("latin-1", "replace"))
-            out += _stream_text(doc, xref)
-        out += strings_in(doc.xref_object(-1).encode("latin-1", "replace"))
-        return out
-    finally:
-        doc.close()
+    return [t for texts in v4_by_object(data) for t in texts]
 
 
 # ---------------------------------------------------------------- V5
