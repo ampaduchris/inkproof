@@ -251,6 +251,7 @@ def test_class_invisible(tmp_path):
 
 
 @pytest.mark.req("REQ-065")
+@pytest.mark.req("REQ-067")
 def test_class_visible_and_order(tmp_path):
     """Plain text is `visible`; a visible match is not mistaken for a hidden one, and the order of 7.2 decides ties."""
     r = audit(sub(tmp_path, "r1"), "R1", terms=term_values("R1")[:1])
@@ -447,6 +448,7 @@ def test_audit_internal_error_is_masked(tmp_path, monkeypatch):
     msg = plain.stdout + plain.stderr
     assert re.search(r"internal error.*\bE4\b|\bE4\b.*internal error", msg, re.I | re.S)
     assert "Traceback" not in msg and SECRET not in msg and "failed on" not in msg
+    assert (plain.report["result"], plain.report["exit_code"], plain.report["findings"]) == ("error", 4, [])
     dbg = audit(sub(tmp_path, "b"), "R1", terms=[SECRET], extra=["--debug"])
     assert dbg.exit_code == 4
     text = dbg.stdout + dbg.stderr
