@@ -30,6 +30,7 @@ dev = [
     "mutmut>=3",
     "reportlab>=4",
     "pypdf>=7.1.1",
+    "jsonschema>=4.26.0",
 ]
 
 [tool.pytest.ini_options]
