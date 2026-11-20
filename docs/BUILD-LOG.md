@@ -11,5 +11,6 @@ Append-only. Read first, written last. One row per session.
 | 2026-11-19 | 1.3 | Sonnet 5.5 | medium (app session record) | 9 (from the timer hook start 14:30:25) | V1-V6 PASS | 4 | https://github.com/ampaduchris/inkproof/pull/5 |
 | 2026-11-20 | 1.4 | Sonnet 5.5 | high (app session record) | 24 (from the timer hook start 16:46:23Z) | V1-V6 PASS | 9 | https://github.com/ampaduchris/inkproof/pull/6 |
 | 2026-11-20 | 1.5 | Sonnet 5.5 | high (app session record) | 14 (from the timer hook start 17:41:36Z) | V1-V6 PASS | 8 | https://github.com/ampaduchris/inkproof/pull/7 |
+| 2026-11-20 | 1.6 | Sonnet 5.5 | medium (app session record) | 10 (from the timer hook start 18:05:24Z) | V1-V6 PASS | 4 | https://github.com/ampaduchris/inkproof/pull/8 |
 
 CI Python versions chosen in session 1.1: 3.11, 3.12, 3.13. Python 3.14 not included; wheel availability for every dependency not checked. Runner: ubuntu-24.04.
