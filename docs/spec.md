@@ -560,9 +560,12 @@ Probe: `docs/probes/n5_probe.py`. Versions: PyMuPDF 2.1 on MuPDF 1.28.6, pdfmine
 | E14 | Alternative text and actual text in a structure tree are returned by no engine. They are in the raw bytes. The tree is reachable from the catalog through PyMuPDF and through pypdf. Removing the catalog entries and saving in full with garbage collection left neither string in the bytes. | REQ-038 works by dropping the tree. V3 must enumerate the tree and V4 finds the literal string (fixture X07). |
 | E15 | A named destination name, a page label prefix and a layer name are returned by no engine's text. PyMuPDF (`resolve_names`, `get_page_labels`, `get_ocgs`) and pypdf (`named_destinations`, `page_labels`, `/OCProperties`) both enumerate them. A full save with garbage collection keeps all three, so apply does not remove them. | V3 can enumerate S5 and S10 through either library. REQ-050 stands: these surfaces are verify-only (fixture X08). |
 
+| E16 | Name-tree destinations (fixture X08, session 1.3, 19 Nov 2026, pypdf 7.1.1, PyMuPDF 2.1). Each library returns a destination name from the `/Dests` dictionary alone and from the `/Names` name tree alone. With both forms in one file PyMuPDF (`resolve_names`) returns both names; pypdf (`named_destinations`) returns only the `/Dests` dictionary name. | V3 enumerates S5 through PyMuPDF, or walks the name tree itself when it uses pypdf (REQ-050). The fixture's name-tree canary is checked with PyMuPDF and the raw scan. |
+| E17 | Fixture R5 (session 1.3). In a justified line that ends with a hyphenated word, pdfminer.six splits the line at the wide word gaps and returns the two halves of the word apart (`Selz-`, then other words, then `eljun`). The text trace and pypdf return the word whole. | REQ-015 on R5 holds for V1 and for pypdf; V2 cannot be relied on for a hyphen at a line end (DEV-009). |
+
 No spec change followed from the probe.
 
-Not checked: a form object reused on several pages; forms with a transformation matrix or clipping; destinations in the `/Names` name tree (the probe used the `/Dests` dictionary); structure trees with many elements; files whose objects sit in object streams. The fixture session checks the name-tree form and reports any failure as a deviation or a spec change.
+Not checked: a form object reused on several pages; forms with a transformation matrix or clipping; structure trees with many elements; files whose objects sit in object streams. The fixture session checks the name-tree form and reports any failure as a deviation or a spec change.
 
 ### 12.4 NOT VERIFIED and settled points
 
@@ -572,5 +575,5 @@ Not checked: a form object reused on several pages; forms with a transformation 
 | N2 | The tax number digit-frequency rule (REQ-023) was from memory. | Settled 19 Nov 2026, with a correction: the issuer also bars three equal digits at consecutive positions. Filter stays off in 1.0. RA-2. |
 | N3 | The IBAN country length table is not drafted here. | Settled 19 Nov 2026 from the registry itself, release 103 (Sep 2026): 89 countries in `src/inkproof/data/iban_lengths.json`, with the release, source and file hash recorded. RA-4. Session 1.4 loads it. |
 | N4 | No synthetic tax or insurance number can be guaranteed unissued. | Settled as far as it can be. Fixture values are issuer-published examples (section 10, RA-3). Not proved unissued. |
-| N5 | Behaviour of the engines on a nested form object, a tagged file and layer names (X05, X07, X08) was not probed. | Settled 19 Nov 2026 for the cases probed (section 12.3). The name-tree form of destinations and the other cases listed there remain for the fixture session. |
+| N5 | Behaviour of the engines on a nested form object, a tagged file and layer names (X05, X07, X08) was not probed. | Settled 19 Nov 2026 for the cases probed (section 12.3). The name-tree form of destinations was checked in session 1.3 (E16). The other cases listed in section 12.3 remain unchecked. |
 | N6 | `pdftotext` was not available locally, so the third cross-check in REQ-030 was untested. | Closed. `pdftotext` is replaced by pypdf (section 12.2). |
