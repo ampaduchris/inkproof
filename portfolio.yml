@@ -1,9 +1,9 @@
 name: inkproof
 pitch: Redact PDFs and prove the text layer is gone, not just covered.
-stack: [python, uv, pymupdf, pdfminer.six, typer, pytest, hypothesis, mutmut]
-tests: 2
-release: ""
-released_on: ""
-demo_url: ""
+stack: [python, uv, pymupdf, pdfminer.six, typer, pypdf, pytest, hypothesis, mutmut]
+tests: 445
+release: v1.0.0
+released_on: 2026-11-21
+demo_url: https://github.com/ampaduchris/inkproof/blob/main/docs/demo.cast
 repo_url: https://github.com/ampaduchris/inkproof
-example_pr_url: ""
+example_pr_url: https://github.com/ampaduchris/inkproof/pull/6

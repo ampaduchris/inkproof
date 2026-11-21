@@ -14,4 +14,7 @@ Checked on 19 November 2026 against PyMuPDF 2.1: the PyPI metadata reads "Dual L
 | --- | --- | --- |
 | PyMuPDF | AGPL-3.0-only (option of a dual licence) | PDF parsing, editing, first text engine |
 
-Further rows are added by the sessions that add dependencies.
+| pdfminer.six | MIT | Second text engine |
+| Typer | MIT | Command line |
+
+pdfminer.six and Typer identifiers read from the installed package metadata on 21 November 2026. Further rows are added by the sessions that add dependencies.
