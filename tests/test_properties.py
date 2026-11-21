@@ -210,12 +210,10 @@ NORMALISE_STRESS = st.text(alphabet=st.sampled_from(["a", "e", "\u200d", "\u00ad
 
 
 @pytest.mark.req("REQ-013")
-@pytest.mark.xfail(strict=True, reason="DEV-024: normalise() is not idempotent when a dropped character separates "
-                                       "a base from its combining mark; spec P6 does not hold")
 @given(s=st.one_of(st.text(), NORMALISE_STRESS))
 @example("a\u200d\u0301")
 def test_p6_normalise_idempotent(s):
-    """P6: normalising twice equals normalising once. Fails today: see DEV-024."""
+    """P6: normalising twice equals normalising once (holds since session 1.8; see DEV-024)."""
     once = normalise(s)
     assert normalise(once) == once
 
