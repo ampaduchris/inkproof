@@ -6,4 +6,6 @@ For a change: open an issue first. Pull requests need green CI and a test tagged
 
 Set up: `uv sync --locked`, then `uv run pytest -q --tb=line`.
 
+Mutation testing takes about 8 minutes and is not run in CI: `uv run mutmut run`. The record is `docs/MUTATION.md`.
+
 By contributing you agree that your contribution is licensed under AGPL-3.0-or-later.

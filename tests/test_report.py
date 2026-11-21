@@ -113,3 +113,34 @@ def test_shipped_schema_is_the_schema_of_the_spec():
 def test_same_input_gives_the_same_output_bytes(tmp_path):
     runs = [apply(sub(tmp_path, str(i)), "R4", terms=all_terms("R4"), patterns=ALL_PATTERNS) for i in range(2)]
     assert runs[0].out.read_bytes() == runs[1].out.read_bytes()
+
+
+@pytest.mark.req("REQ-041")
+def test_trailer_id_is_stable_in_hex_and_literal_forms():
+    """PyMuPDF writes the identifier as hex strings or, for some random values, as literal strings (found in 1.10)."""
+    from inkproof.apply import stable_trailer_id
+
+    hex_form = b"x\ntrailer\n<</Size 1/ID[<DC304068736D9A92BFFD2416C5C773D0><DC304068736D9A92BFFD2416C5C773D0>]>>\nstartxref\n1\n"
+    literal = b"x\ntrailer\n<</Size 1/ID[<DC304068736D9A92BFFD2416C5C773D0>(!\\210X/R\\r?\\324\\370\\370BNjm\\ra)]>>\nstartxref\n1\n"
+    other = b"x\ntrailer\n<</Size 1/ID[(a\\)b(c)d)<00112233445566778899AABBCCDDEEFF>]>>\nstartxref\n1\n"
+    for data in (hex_form, literal, other):
+        out = stable_trailer_id(data)
+        assert re.search(rb"/ID\[<([0-9A-F]{32})><\1>\]", out)
+        assert out.endswith(b">>\nstartxref\n1\n") and out.startswith(b"x\ntrailer\n<</Size 1/")
+    # the identifier depends on the file, not on the old identifier
+    assert stable_trailer_id(hex_form) == stable_trailer_id(hex_form.replace(b"DC3040", b"AB1234"))
+    assert stable_trailer_id(literal) == stable_trailer_id(hex_form)
+
+
+@pytest.mark.req("REQ-041")
+def test_serialise_is_byte_stable_over_many_runs():
+    import pymupdf
+    from inkproof.apply import serialise
+
+    data = fixture_bytes("R4")
+    outs = set()
+    for _ in range(150):
+        doc = pymupdf.open(stream=data, filetype="pdf")
+        outs.add(serialise(doc))
+        doc.close()
+    assert len(outs) == 1

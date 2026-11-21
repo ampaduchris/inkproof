@@ -1,6 +1,6 @@
 [project]
 name = "inkproof"
-version = "0.0.0"
+version = "1.0.0"
 description = "Redact PDFs and prove the text layer is gone, not just covered."
 readme = "README.md"
 requires-python = ">=3.11"

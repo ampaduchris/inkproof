@@ -4,9 +4,6 @@ on:
   pull_request:
   push:
     branches: [main]
-  schedule:
-    # Weekly run only while the build is CURRENT. Removed at release.
-    - cron: "17 5 * * 1"
 
 permissions:
   contents: read
@@ -36,6 +33,8 @@ jobs:
         run: uv run --locked pytest -q --tb=short
       - name: Requirement traceability
         run: uv run --locked python scripts/trace.py
+      - name: README blocks (Verify it yourself)
+        run: uv run --locked python scripts/run_blocks.py README.md
 
   gitleaks:
     runs-on: ubuntu-24.04
