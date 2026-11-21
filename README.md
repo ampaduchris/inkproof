@@ -3,7 +3,8 @@
 A black box drawn over text in a PDF (Portable Document Format) file hides the words and leaves them in the file. Select the page, copy, paste, and they come back. inkproof deletes the words from the text layer. Then it re-reads the file it is about to write with two independent text extraction engines and three further checks, and it writes nothing if one match survives.
 
 ```console
-$ inkproof apply examples/statement.pdf --terms examples/terms.txt \
+$ inkproof apply examples/statement.pdf \
+    --terms examples/terms.txt \
     --patterns iban,email -o out.pdf
 inkproof: clean: 4 match(es) removed and not found again by any
 check. The check covers the text layer only; text in images is
@@ -58,7 +59,8 @@ Terms match in any letter case, across a line break, and when the PDF stores a w
 ### Audit a PDF that someone else redacted
 
 ```console
-$ inkproof audit examples/statement.pdf --terms examples/terms.txt \
+$ inkproof audit examples/statement.pdf \
+    --terms examples/terms.txt \
     --patterns iban,email --report audit.json
 inkproof: leaks found: 4 in 4 place(s). The check covers the text
 layer only; text in images is not examined.
