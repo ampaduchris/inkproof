@@ -36,3 +36,18 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["req(id): the requirement id this test proves (REQ-###)"]
+
+[tool.mutmut]
+# Mutate the matcher and the verifier only (REQ-092).
+source_paths = ["src/"]
+do_not_mutate = [
+    "src/inkproof/__init__.py",
+    "src/inkproof/apply.py",
+    "src/inkproof/audit.py",
+    "src/inkproof/cli.py",
+    "src/inkproof/normalise.py",
+    "src/inkproof/patterns.py",
+    "src/inkproof/terms.py",
+]
+pytest_add_cli_args_test_selection = ["tests/"]
+also_copy = ["scripts/", "docs/"]

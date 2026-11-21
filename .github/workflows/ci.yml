@@ -34,9 +34,8 @@ jobs:
         run: uv sync --locked
       - name: Tests
         run: uv run --locked pytest -q --tb=short
-      # Report-only until session 1.8 (DEV-007); then drop the flag so an untested MUST fails the job.
       - name: Requirement traceability
-        run: uv run --locked python scripts/trace.py --report-only
+        run: uv run --locked python scripts/trace.py
 
   gitleaks:
     runs-on: ubuntu-24.04
