@@ -239,6 +239,8 @@ def audit_document(data: bytes, doc, matcher: Matcher) -> Outcome:
 def run_audit(req: Request) -> int:
     """Run audit. Returns the exit code. Raises InputError for exit 2."""
     terms = read_sources(req.terms, req.patterns, req.allow_short_terms)
+    if req.report is not None and req.report.resolve() == req.input.resolve():
+        raise InputError("the report path must differ from the audited file")
     try:
         data = req.input.read_bytes()
     except OSError:

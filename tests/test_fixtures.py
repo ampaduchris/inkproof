@@ -51,6 +51,7 @@ def fixture_tokens(text: str) -> set[str]:
 
 # ---------------------------------------------------------------- determinism and inventory
 
+@pytest.mark.req("REQ-091")
 def test_all_fixtures_regenerate_byte_identically_in_process():
     second = build_all()
     assert list(second) == list(FIXTURES)
@@ -58,6 +59,7 @@ def test_all_fixtures_regenerate_byte_identically_in_process():
         assert second[fid].files == fx.files, fid
 
 
+@pytest.mark.req("REQ-091")
 def test_all_fixtures_regenerate_byte_identically_across_processes(tmp_path):
     outs = []
     for i in range(2):

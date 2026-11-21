@@ -118,3 +118,14 @@ def test_duplicate_terms():
     assert [t.line for t in terms] == [1, 2]
     ms = Matcher(terms=terms, patterns=[]).find("a Zelfen b")
     assert [m.source for m in ms] == [("term", 1)]
+
+
+@pytest.mark.req("REQ-013")
+@pytest.mark.parametrize("dropped", ["​", "‍", "­", "⁠", "﻿", "‌"])
+def test_dropped_character_between_base_and_accent_still_matches(dropped):
+    """Review 1.7 F-01: a dropped character between a letter and its combining accent must not split them."""
+    term = "José Zqvara"
+    text = "to Jose" + dropped + "́ Zqvara."
+    found = matches([term], text)
+    assert len(found) == 1
+    assert spans(found, text) == ["Jose" + dropped + "́ Zqvara"]

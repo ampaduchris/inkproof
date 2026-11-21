@@ -85,6 +85,7 @@ def test_apply_no_overwrite_without_force(tmp_path):
 
 
 @pytest.mark.req("REQ-008")
+@pytest.mark.req("REQ-090")
 def test_cli_version_and_help():
     res = invoke(["--version"])
     assert res.exit_code == 0 and res.stdout.strip() == inkproof.__version__
@@ -193,3 +194,56 @@ def test_apply_does_not_modify_input(tmp_path):
         r = apply(d, fid, terms=terms)
         assert r.exit_code == code
         assert (sha256(src), src.stat().st_size) == before
+
+
+@pytest.mark.req("REQ-006")
+@pytest.mark.req("REQ-089")
+def test_apply_refuses_report_path_equal_to_input_or_output(tmp_path):
+    """Review 1.7 F-02: --report equal to IN or OUT exits 2 and writes nothing."""
+    d = sub(tmp_path, "a")
+    src = d / "in.pdf"
+    src.write_bytes(fixture_bytes("R1"))
+    before = sha256(src)
+    out = d / "out.pdf"
+    terms = write_terms(d / "t.txt", [R1_TERM])
+    res = invoke(["apply", str(src), "--terms", str(terms), "-o", str(out), "--report", str(src)])
+    assert res.exit_code == 2 and sha256(src) == before and not out.exists()
+    link = d / "link.json"
+    link.symlink_to(src)
+    res = invoke(["apply", str(src), "--terms", str(terms), "-o", str(out), "--report", str(link)])
+    assert res.exit_code == 2 and sha256(src) == before and not out.exists()
+    res = invoke(["apply", str(src), "--terms", str(terms), "-o", str(out), "--report", str(out)])
+    assert res.exit_code == 2 and not out.exists()
+
+
+@pytest.mark.req("REQ-086")
+@pytest.mark.req("REQ-087")
+@pytest.mark.parametrize("force", [False, True])
+def test_report_write_failure_leaves_no_output(tmp_path, force):
+    """Review 1.7 F-03: a report that cannot be written (after verification passes) exits 4 with OUT untouched."""
+    d = sub(tmp_path, "f" if force else "n")
+    src = d / "in.pdf"
+    src.write_bytes(fixture_bytes("R1"))
+    out = d / "out.pdf"
+    if force:
+        out.write_bytes(b"previous")
+    terms = write_terms(d / "t.txt", [R1_TERM])
+    args = ["apply", str(src), "--terms", str(terms), "-o", str(out), "--report", str(d / "missing" / "r.json")]
+    res = invoke(args + (["--force"] if force else []))
+    assert res.exit_code == 4
+    if force:
+        assert out.read_bytes() == b"previous"
+    else:
+        assert not out.exists()
+    assert not [p for p in d.iterdir() if p.name.startswith(".inkproof-")]
+
+
+@pytest.mark.req("REQ-055")
+def test_audit_refuses_report_path_equal_to_audited_file(tmp_path):
+    """Review 1.7 F-02: audit --report FILE exits 2 and leaves FILE unchanged."""
+    d = sub(tmp_path, "au")
+    src = d / "aud.pdf"
+    src.write_bytes(fixture_bytes("A07"))
+    before = sha256(src)
+    res = invoke(["audit", str(src), "--patterns", "email", "--report", str(src)])
+    assert res.exit_code == 2 and sha256(src) == before
