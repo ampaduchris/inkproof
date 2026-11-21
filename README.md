@@ -24,8 +24,10 @@ Claude Code wrote this code under my direction. On every pull request I approved
 ## Install
 
 ```bash
-pipx install inkproof
+pipx install git+https://github.com/ampaduchris/inkproof@v1.0.0
 ```
+
+inkproof is not on the Python Package Index (PyPI). The release also carries a wheel and a source archive on its [GitHub release page](https://github.com/ampaduchris/inkproof/releases).
 
 inkproof needs Python 3.11 or newer. It is tested on Python 3.11, 3.12 and 3.13. It is tested on Linux in continuous integration (CI). It should run on macOS and Windows; that is not tested. It makes no network connection.
 

@@ -9,5 +9,5 @@ All notable changes are listed here. The format follows Keep a Changelog.
 - JSON report that never holds a matched value, a term or text from the document.
 - Exit codes 0 to 4, defined in the specification.
 - Examples in `examples/`, a recording script (`scripts/make_demo.py`) and a README runner (`scripts/run_blocks.py`) that CI runs.
-- Release workflow: publishing to PyPI by trusted publishing.
+- Release workflow: builds the wheel and source archive and attaches them to the GitHub release. Not published to PyPI (DEV-028).
 - Known limits are listed in the README and in `docs/spec.md` section 1.2. Text drawn in a clipping render mode is not removed and makes `apply` exit 1 (DEV-027).
