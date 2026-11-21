@@ -241,21 +241,25 @@ def strip_surfaces(doc, matcher: Matcher) -> dict:
     return actions
 
 
-_TRAILER_ID = re.compile(rb"/ID\s*\[\s*<([0-9A-Fa-f]{32})>\s*<([0-9A-Fa-f]{32})>\s*\]")
+_ID_STRING = rb"(?:<[0-9A-Fa-f]*>|\((?:\\.|[^\\()]|\((?:\\.|[^\\()])*\))*\))"
+_TRAILER_ID = re.compile(rb"/ID\s*\[\s*" + _ID_STRING + rb"\s*" + _ID_STRING + rb"\s*\]")
 
 
 def stable_trailer_id(data: bytes) -> bytes:
     """Replace the random file identifier by one derived from the file itself, so the same input gives the same bytes.
 
-    The new identifier has the same length, so no offset in the file moves. It carries nothing from the input file.
+    PyMuPDF writes each half of the identifier as a hexadecimal string or, for some random values, as a literal
+    string. Both forms are matched. The array is rewritten as two equal hexadecimal strings. The new identifier carries
+    nothing from the input file. The array sits in the classic trailer after the cross-reference table, so no offset
+    in the file moves (`serialise` never writes a cross-reference stream).
     """
     matches = list(_TRAILER_ID.finditer(data))
     if not matches:
         return data
     m = matches[-1]
-    zeroed = data[:m.start(1)] + b"0" * 32 + data[m.end(1):m.start(2)] + b"0" * 32 + data[m.end(2):]
+    zeroed = data[:m.start()] + b"/ID[<" + b"0" * 32 + b"><" + b"0" * 32 + b">]" + data[m.end():]
     ident = hashlib.sha256(zeroed).hexdigest()[:32].upper().encode()
-    return data[:m.start(1)] + ident + data[m.end(1):m.start(2)] + ident + data[m.end(2):]
+    return data[:m.start()] + b"/ID[<" + ident + b"><" + ident + b">]" + data[m.end():]
 
 
 def serialise(doc) -> bytes:
