@@ -354,6 +354,8 @@ def run_apply(req: Request) -> int:
     options = [name for name, on in (("substring", req.substring), ("allow-short-terms", req.allow_short_terms),
                                      ("no-mark", req.no_mark), ("force", req.force)) if on]
     report_path = req.report or Path(str(req.output) + ".report.json")
+    if report_path.resolve() in (req.input.resolve(), req.output.resolve()):
+        raise InputError("the report path must differ from the input file and the output file")
     matcher = Matcher(terms, req.patterns, substring=req.substring)
     base = dict(mode="apply", terms_count=len(terms), patterns=req.patterns, options=options)
     input_info = {"sha256": _sha(data), "pages": 0, "revisions": 1}
@@ -395,11 +397,12 @@ def run_apply(req: Request) -> int:
         try:
             staged = private / "candidate.pdf"
             staged.write_bytes(candidate)
+            # The report is written before the rename, so a failed report write leaves OUT untouched (REQ-086).
+            write(0, "clean", output_info={"sha256": _sha(candidate), "pages": input_info["pages"], "revisions": 1},
+                  removed=removed, actions=actions, checks=checks, limits=limits)
             os.replace(staged, req.output)
         finally:
             shutil.rmtree(private, ignore_errors=True)
-        write(0, "clean", output_info={"sha256": _sha(candidate), "pages": input_info["pages"], "revisions": 1},
-              removed=removed, actions=actions, checks=checks, limits=limits)
         total = sum(m["count"] for m in removed)
         _err(f"clean: {total} match(es) removed and not found again by any check. "
              f"The check covers the text layer only; text in images is not examined.")
